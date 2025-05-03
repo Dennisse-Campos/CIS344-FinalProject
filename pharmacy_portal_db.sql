@@ -169,4 +169,8 @@ INSERT INTO Sales (prescriptionID, saleDate, quantitySold, saleAmount)
 			(2, NOW(), 15, 75.00),
             (3, NOW(), 20, 120.00);
 	
-    
+-- Adding password column to Users table --
+
+USE pharmacy_portal_db;
+ALTER TABLE Users
+ADD password VARCHAR(255) NOT NULL;
