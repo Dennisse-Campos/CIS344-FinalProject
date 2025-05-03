@@ -11,14 +11,16 @@ CREATE TABLE IF NOT EXISTS Users (
 	userID INT NOT NULL UNIQUE AUTO_INCREMENT PRIMARY KEY,
     userName VARCHAR(45) NOT NULL UNIQUE,
     contactInfo VARCHAR(200),
-    userType ENUM('pharmacist','patient') NOT NULL);
+    userType ENUM('pharmacist','patient') NOT NULL,
+	password VARCHAR(255) NOT NULL);
 
 -- 2.Medications Table --
 CREATE TABLE IF NOT EXISTS Medications(
 	medicationId INT NOT NULL UNIQUE AUTO_INCREMENT PRIMARY KEY,
     medicationName VARCHAR(45) NOT NULL,
     dosage VARCHAR(45) NOT NULL,
-    manufacturer VARCHAR(100));
+    manufacturer VARCHAR(100)
+	price DECIMAL(10,2) NOT NULL);
 
 -- 3.Prescriptions Table --
 CREATE TABLE IF NOT EXISTS Prescriptions (
@@ -144,15 +146,15 @@ END //
 DELIMITER ;
 
 -- Data Population --
-INSERT INTO Users (userName, contactInfo, userType)
-	VALUES 	('jane_doe', 'jane@example.com', 'patient'),
-			('john_smith', 'john@example.com', 'pharmacist'),
-            ('alice_brown', 'alice@example.com', 'patient');
+INSERT INTO Users (userName, contactInfo, userType, password)
+	VALUES 	('jane_doe', 'jane@example.com', 'patient', '123'),
+			('john_smith', 'john@example.com', 'pharmacist', '123'),
+            ('alice_brown', 'alice@example.com', 'patient', '123');
             
-INSERT INTO Medications (medicationName,dosage,manufacturer)
-	VALUES	('Amoxicillin', '500mg', 'Pfizer'),
-			('Ibuprofen', '200mg', 'Johnson & Johnson'),
-            ('Paracetamol', '500mg', 'Bayer');
+INSERT INTO Medications (medicationName, dosage, manufacturer, price)
+	VALUES	('Amoxicillin', '500mg', 'Pfizer', 0.61),
+			('Ibuprofen', '200mg', 'Johnson & Johnson', 0.20),
+            ('Paracetamol', '500mg', 'Bayer', 0.14);
             
 INSERT INTO Prescriptions (userID, medicationId, prescribedDate, dosageInstructions, quantity, refillCount)
 	VALUES	(1, 1, NOW(), 'Take 1 capsule every 8 hours', 10, 1),
@@ -165,12 +167,7 @@ INSERT INTO Inventory (medicationID, quantityAvailable, lastUpdated)
             (3, 250, NOW());
             
 INSERT INTO Sales (prescriptionID, saleDate, quantitySold, saleAmount)
-	VALUES	(1, NOW(), 10, 100.00),
-			(2, NOW(), 15, 75.00),
-            (3, NOW(), 20, 120.00);
+	VALUES	(1, NOW(), 21, 12.81),
+			(2, NOW(), 15, 3.00),
+            (3, NOW(), 20, 2.80);
 	
--- Adding password column to Users table --
-
-USE pharmacy_portal_db;
-ALTER TABLE Users
-ADD password VARCHAR(255) NOT NULL;
