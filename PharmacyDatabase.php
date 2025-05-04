@@ -19,7 +19,7 @@ class PharmacyDatabase {
         echo "Successfully connected to the database";
     }
 
-    public function addPrescription($patientUserName, $medicationId, $dosageInstructions, $quantity)  {
+    public function addPrescription($patientUserName, $medicationId, $dosageInstructions, $quantity, $refillCount)  {
         $stmt = $this->connection->prepare(
             "SELECT userId FROM Users WHERE userName = ? AND userType = 'patient'"
         );
@@ -31,14 +31,14 @@ class PharmacyDatabase {
         
         if ($patientId){
             $stmt = $this->connection->prepare(
-                "INSERT INTO prescriptions (userId, medicationId, dosageInstructions, quantity) VALUES (?, ?, ?, ?)"
+                "INSERT INTO prescriptions (userId, medicationId, prescribedDate, dosageInstructions, quantity, refillCount) VALUES (?, ?, NOW(), ?, ?, ?)"
             );
-            $stmt->bind_param("iisi", $patientId, $medicationId, $dosageInstructions, $quantity);
-            $stmt->execute();
+            $stmt->bind_param("iisii", $patientId, $medicationId, $dosageInstructions, $quantity, $refillCount);
+            $success = $stmt->execute();
             $stmt->close();
-            echo "Prescription added successfully";
-        }else{
-            echo "failed to add prescription";
+            return $success;
+        } else {
+            return false;
         }
     }
 
@@ -197,6 +197,18 @@ class PharmacyDatabase {
         $stmt->close();
 
         return $userDetails;
+    }
+
+    public function getUserIdFromUsername($username) {
+        $stmt = $this->connection->prepare(
+            "SELECT userId FROM Users WHERE userName = ? AND userType = 'patient'"
+        );
+        $stmt->bind_param("s", $username);
+        $stmt->execute();
+        $stmt->bind_result($userId);
+        $stmt->fetch();
+        $stmt->close();
+        return $userId; // Return the userId (which might be null if not found)
     }
 
 
