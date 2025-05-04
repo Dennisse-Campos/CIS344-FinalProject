@@ -140,7 +140,7 @@ BEGIN
     -- Notify if stock is low
     IF (SELECT quantityAvailable FROM Inventory WHERE medicationId = NEW.medicationId) < 10 THEN
         SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Low stock for medication ID';
+        SET MESSAGE_TEXT = 'Low stock for medication';
     END IF;
 END //
 DELIMITER ;
