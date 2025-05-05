@@ -85,3 +85,4 @@ if (isset($_POST["patient_username"]) && isset($_POST["medication_id"]) && isset
     <a href="PharmacyServer.php">Back to Home</a>
     </body>
 </html>
+
