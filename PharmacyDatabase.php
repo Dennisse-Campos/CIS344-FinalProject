@@ -294,20 +294,6 @@ class PharmacyDatabase {
     }
     
 
-    private function getPatientId($patientUserName) {
-        $query = "SELECT userId FROM Users WHERE userName = ? AND userType = 'patient'";
-        $stmt = $this->connection->prepare($query);
-        $stmt->bind_param("s", $patientUserName);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        if ($result->num_rows == 1) {
-            $row = $result->fetch_assoc();
-            return $row['userId'];
-        } else {
-            return false;
-        }
-    }
-
     private function getPricePerBottle($prescriptionId) {
         $conn = $this->getConnection();
         $sql = "SELECT m.price * p.quantity AS pricePerBottle
@@ -388,6 +374,12 @@ class PharmacyDatabase {
             return false;
         }
     }
+    
+
+
+}
+?>
+
     
 
 
