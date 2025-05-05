@@ -41,7 +41,7 @@ function handleRegistration($db) {
                 $_SESSION['userType'] = $new_userType;
                 if ($new_userType == 'patient') {
                     header('Location: patient_home.php');
-                    exit(); // Important: Stop further execution
+                    exit(); // Stop further execution
                 } elseif ($new_userType == 'pharmacist') {
                     header('Location: home.php');
                     exit();
