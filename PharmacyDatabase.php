@@ -100,47 +100,9 @@ class PharmacyDatabase {
         return $inventoryData;
     }
 
-    public function addUser($userName, $contactInfo, $userType, $password) {
-           //Write Code here
-        
-        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+    public function addUser($userName, $password, $userType, $contactInfo) { 
+        // Write your code here
 
-        // Use a prepared statement to prevent SQL injection
-        $stmt = $this->connection->prepare("INSERT INTO Users (userName, contactInfo, userType, password) VALUES (?, ?, ?, ?)");
-        if ($stmt === false) {
-           die("Error preparing statement: " . $this->connection->error); //  Important
-        }
-   
-        $stmt->bind_param("ssss", $userName, $contactInfo, $userType, $hashedPassword);
-   
-        if ($stmt->execute()) {
-           $stmt->close();
-           return true; // Indicate success
-       } else {
-           error_log("Error executing query: " . $this->connection->error); // Log the error
-           $stmt->close();
-           return false; // Indicate failure
-        }
-    
-    }
-
-    public function addUserSimple($userName, $userType) {
-        $stmt = $this->connection->prepare("INSERT INTO Users (userName, userType) VALUES (?, ?)");
-        if ($stmt === false) {
-            die("Error preparing statement: " . $this->connection->error);
-        }
-        $stmt->bind_param("ss", $userName, $userType);
-        if ($stmt->execute()) {
-            $stmt->close();
-            return true;
-        } else {
-            error_log("Error executing query: " . $this->connection->error);
-            $stmt->close();
-            return false;
-        }
-    }
-
-    public function registerUser($userName, $password, $userType, $contactInfo) { // Changed $hashedPassword to $password
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT); // Hash the password here
         $query = "INSERT INTO Users (userName, password, userType, contactInfo) VALUES (?, ?, ?, ?)";
         $stmt = $this->connection->prepare($query);
@@ -431,3 +393,4 @@ class PharmacyDatabase {
 
 }
 ?>
+
