@@ -6,9 +6,9 @@ require_once 'PharmacyDatabase.php';
 session_start();
 
 // Enable error reporting for debugging
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+// ini_set('display_errors', 1);
+// ini_set('display_startup_errors', 1);
+// error_reporting(E_ALL);
 
 // Create a new instance of the PharmacyDatabase class
 $db = new PharmacyDatabase();
@@ -104,3 +104,4 @@ $prescriptions = $db->getAllPrescriptions();
     <!-- <a href="home.php">Back to Home</a> -->
 </body>
 </html>
+
