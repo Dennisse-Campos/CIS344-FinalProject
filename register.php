@@ -33,7 +33,7 @@ function handleRegistration($db) {
 
         if (count($registrationErrors) == 0) {
             // Use the registerUser method from PharmacyDatabase
-            $result = $db->registerUser($new_username, $new_password, $new_userType, $new_contactInfo); // Pass the plain text password
+            $result = $db->addUser($new_username, $new_password, $new_userType, $new_contactInfo); // Pass the plain text password
             if ($result) {
                 // Redirect based on user type
                 $_SESSION['loggedIn'] = true;
