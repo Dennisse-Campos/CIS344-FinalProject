@@ -19,6 +19,10 @@ class PharmacyDatabase {
         echo "Successfully connected to the database";
     }
 
+    public function getConnection() {
+        return $this->connection;
+    }
+
     public function addPrescription($patientUserName, $medicationId, $dosageInstructions, $quantity, $refillCount)  {
         $stmt = $this->connection->prepare(
             "SELECT userId FROM Users WHERE userName = ? AND userType = 'patient'"
@@ -120,6 +124,55 @@ class PharmacyDatabase {
     
     }
 
+    public function addUserSimple($userName, $userType) {
+        $stmt = $this->connection->prepare("INSERT INTO Users (userName, userType) VALUES (?, ?)");
+        if ($stmt === false) {
+            die("Error preparing statement: " . $this->connection->error);
+        }
+        $stmt->bind_param("ss", $userName, $userType);
+        if ($stmt->execute()) {
+            $stmt->close();
+            return true;
+        } else {
+            error_log("Error executing query: " . $this->connection->error);
+            $stmt->close();
+            return false;
+        }
+    }
+
+    public function registerUser($userName, $password, $userType, $contactInfo) { // Changed $hashedPassword to $password
+        $hashedPassword = password_hash($password, PASSWORD_DEFAULT); // Hash the password here
+        $query = "INSERT INTO Users (userName, password, userType, contactInfo) VALUES (?, ?, ?, ?)";
+        $stmt = $this->connection->prepare($query);
+        $stmt->bind_param("ssss", $userName, $hashedPassword, $userType, $contactInfo);
+        if ($stmt->execute()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    // Verify User Existence for Login
+    public function verifyUserLogin($username, $userType) {
+        $stmt = $this->connection->prepare("SELECT userId, userName, userType, password FROM Users WHERE userName = ? AND userType = ?");
+        if (!$stmt) {
+            die("Error preparing statement (verifyUserLogin): " . $this->connection->error);
+        }
+        $stmt->bind_param("ss", $username, $userType);
+        $stmt->execute();
+        $result = $stmt->get_result(); //get the result
+        if ($result->num_rows == 1) {
+            $user = $result->fetch_assoc();
+            $stmt->close();
+            return $user; // Return the whole user row, including hashed password
+        } else {
+            $stmt->close();
+            return null; // User not found
+        }
+    }
+
+
+
     //Add Other needed functions here
 
     public function addMedication($medicationName, $dosage, $manufacturer, $price) {
@@ -165,51 +218,215 @@ class PharmacyDatabase {
         }
     }
 
+
+
     public function getUserDetails($userId) {
         // Use prepared statements to prevent SQL injection
-        $stmt = $this->connection->prepare("SELECT userId, userName, contactInfo, userType FROM Users WHERE userId = ?");
-        if ($stmt === false) {
+        $stmt0 = $this->connection->prepare("SELECT userID, userName, contactInfo, userType FROM Users WHERE userID = ?");
+        if ($stmt0 === false) {
             die("Error preparing statement: " . $this->connection->error);
         }
-        $stmt->bind_param("i", $userId);
-        $stmt->execute();
-        $userResult = $stmt->get_result();
+        $stmt0->bind_param("i", $userId);
+        $stmt0->execute();
+        $userResult = $stmt0->get_result();
 
         if ($userResult->num_rows == 0) {
-            $stmt->close();
-            return null; // Or throw an exception: throw new Exception("User not found");
+            $stmt0->close();
+            return null;
         }
         $userDetails = $userResult->fetch_assoc();
-        $stmt->close();
+        $stmt0->close();
 
-        // Get user's prescriptions
-        $stmt = $this->connection->prepare("SELECT p.prescriptionId, p.dosageInstructions, p.quantity, m.medicationName 
-                                            FROM Prescriptions p 
-                                            JOIN Medications m ON p.medicationId = m.medicationId
-                                            WHERE p.userId = ?");
+        // Get user's prescriptions, including refills
+        $query = "SELECT p.prescriptionId, p.dosageInstructions, p.quantity, m.medicationName, p.refillCount AS refills
+                    FROM Prescriptions p
+                    JOIN Medications m ON p.medicationId = m.medicationId
+                    WHERE p.userId = ?"; //changed p.userID to p.userId
+        $stmt = $this->connection->prepare($query);
         if ($stmt === false) {
             die("Error preparing statement: " . $this->connection->error);
         }
         $stmt->bind_param("i", $userId);
         $stmt->execute();
         $prescriptionResult = $stmt->get_result();
+        if(!$prescriptionResult){
+            die("Error with prescription query: ". $this->connection->error);
+        }
+        // echo "Number of rows: " . $prescriptionResult->num_rows . "<br>"; // Add this line
+        // echo "Error: " . $this->connection->error . "<br>";
         $userDetails['prescriptions'] = $prescriptionResult->fetch_all(MYSQLI_ASSOC);
         $stmt->close();
 
         return $userDetails;
     }
 
-    public function getUserIdFromUsername($username) {
-        $stmt = $this->connection->prepare(
-            "SELECT userId FROM Users WHERE userName = ? AND userType = 'patient'"
-        );
-        $stmt->bind_param("s", $username);
-        $stmt->execute();
-        $stmt->bind_result($userId);
-        $stmt->fetch();
-        $stmt->close();
-        return $userId; // Return the userId (which might be null if not found)
+
+    public function getAllMedications() {
+        $query = "SELECT medicationId, medicationName, dosage, manufacturer FROM Medications"; //get the data
+        $result = $this->connection->query($query);
+        if (!$result) {
+            die("Error querying medications: " . $this->connection->error); //error check
+        }
+        return $result->fetch_all(MYSQLI_ASSOC);
     }
+
+    public function addToInventory($medicationId, $quantity) {
+        //  Check if medication exists
+        $checkMedicationQuery = "SELECT medicationId FROM Medications WHERE medicationId = ?";
+        $checkMedicationStmt = $this->connection->prepare($checkMedicationQuery);
+    
+        if(!$checkMedicationStmt){
+             die("Error preparing statement (checkMedication): " . $this->connection->error);
+        }
+    
+        $checkMedicationStmt->bind_param("i", $medicationId);
+        $checkMedicationStmt->execute();
+        $checkMedicationResult = $checkMedicationStmt->get_result();
+    
+        if ($checkMedicationResult->num_rows == 0) {
+             die("Medication ID does not exist.");
+        }
+        $checkMedicationStmt->close();
+    
+        // First, check if the medicationId exists in the Inventory table
+        $checkQuery = "SELECT quantityAvailable FROM Inventory WHERE medicationId = ?";
+        $checkStmt = $this->connection->prepare($checkQuery);
+        if (!$checkStmt) {
+            die("Error preparing statement (check): " . $this->connection->error);
+        }
+        $checkStmt->bind_param("i", $medicationId);
+        $checkStmt->execute();
+        $checkResult = $checkStmt->get_result();
+    
+    
+    
+        if ($checkResult->num_rows > 0) {
+            // Medication exists, update the quantity
+            $updateQuery = "UPDATE Inventory SET quantityAvailable = quantityAvailable + ?, lastUpdated = NOW() WHERE medicationId = ?";
+            $updateStmt = $this->connection->prepare($updateQuery);
+            if (!$updateStmt) {
+                die("Error preparing statement (update): " . $this->connection->error);
+            }
+            $updateStmt->bind_param("ii", $quantity, $medicationId);
+            $updateResult = $updateStmt->execute();
+            if(!$updateResult){
+                 die("Error updating inventory: " . $this->connection->error);
+            }
+            $updateStmt->close();
+            return $updateResult; // Return the result of the update
+        } else {
+            // Medication doesn't exist, insert a new row
+            $insertQuery = "INSERT INTO Inventory (medicationId, quantityAvailable, lastUpdated) VALUES (?, ?, NOW())";
+            $insertStmt = $this->connection->prepare($insertQuery);
+            if (!$insertStmt) {
+                die("Error preparing statement (insert): " . $this->connection->error);
+            }
+            $insertStmt->bind_param("ii", $medicationId, $quantity);
+            $insertResult = $insertStmt->execute();
+             if(!$insertResult){
+                 die("Error inserting into inventory: " . $this->connection->error);
+            }
+            $insertStmt->close();
+            return $insertResult;
+        }
+    }
+    
+
+    private function getPatientId($patientUserName) {
+        $query = "SELECT userId FROM Users WHERE userName = ? AND userType = 'patient'";
+        $stmt = $this->connection->prepare($query);
+        $stmt->bind_param("s", $patientUserName);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($result->num_rows == 1) {
+            $row = $result->fetch_assoc();
+            return $row['userId'];
+        } else {
+            return false;
+        }
+    }
+
+    private function getPricePerBottle($prescriptionId) {
+        $conn = $this->getConnection();
+        $sql = "SELECT m.price * p.quantity AS pricePerBottle
+                FROM Prescriptions p
+                JOIN Medications m ON p.medicationId = m.medicationId
+                WHERE p.prescriptionId = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param('i', $prescriptionId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($result->num_rows > 0) {
+            $row = $result->fetch_assoc();
+            return $row['pricePerBottle'];
+        }
+        return null;
+    }
+
+    public function processSale($prescriptionId, $quantity) {
+        
+        $conn = $this->getConnection();
+
+        if ($conn === null) {
+            error_log("No database connection in processSale.");
+            return false;
+        }
+
+        $conn->autocommit(false); // Start transaction
+
+        try {
+            // Fetch the price per bottle
+            $pricePerBottle = $this->getPricePerBottle($prescriptionId);
+
+            if ($pricePerBottle === null) {
+                $conn->rollback();
+                error_log("Error: Could not retrieve price per bottle for prescription ID: " . $prescriptionId);
+                return false;
+            }
+
+            $saleAmount = $quantity * $pricePerBottle;
+
+            // Insert into sales table INCLUDING saleAmount
+            $sqlSales = "INSERT INTO sales (prescriptionId, quantitySold, saleDate, saleAmount) VALUES (?, ?, NOW(), ?)";
+            $stmtSales = $conn->prepare($sqlSales);
+            $stmtSales->bind_param('iis', $prescriptionId, $quantity, $saleAmount); // 's' for string/decimal
+            $stmtSales->execute();
+
+            if ($stmtSales->affected_rows > 0) {
+                // Update refill count in prescriptions table
+                $sqlRefill = "UPDATE Prescriptions SET refillCount = refillCount - ? WHERE prescriptionId = ?";
+                $stmtRefill = $conn->prepare($sqlRefill);
+                $stmtRefill->bind_param('ii', $quantity, $prescriptionId);
+                $stmtRefill->execute();
+
+                if ($stmtRefill->affected_rows >= 0) {
+                    $conn->commit();
+                    $stmtSales->close();
+                    $stmtRefill->close();
+                    return true;
+                } else {
+                    $conn->rollback();
+                    $stmtSales->close();
+                    $stmtRefill->close();
+                    error_log("Error updating refill count. Rolling back sale.");
+                    return false;
+                }
+            } else {
+                $conn->rollback();
+                $stmtSales->close();
+                error_log("Error inserting into sales table. Rolling back.");
+                return false;
+            }
+
+        } catch (Exception $e) {
+            $conn->rollback();
+            if (isset($stmtSales)) $stmtSales->close();
+            if (isset($stmtRefill)) $stmtRefill->close();
+            error_log("Exception during sale process: " . $e->getMessage());
+            return false;
+        }
+    }
+    
 
 
 }
