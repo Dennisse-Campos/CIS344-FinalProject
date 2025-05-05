@@ -1,8 +1,8 @@
 <?php
 
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+// ini_set('display_errors', 1);
+// ini_set('display_startup_errors', 1);
+// error_reporting(E_ALL);
 
 // Include the PharmacyDatabase class
 require_once 'PharmacyDatabase.php';
@@ -155,3 +155,4 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 <!-- If refills is 0, the user can purchase 1 time.
 If refills is greater than 0, the user can purchase up to refills + 1 times. -->
+
