@@ -380,9 +380,3 @@ class PharmacyDatabase {
 }
 ?>
 
-    
-
-
-}
-?>
-
