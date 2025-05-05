@@ -69,7 +69,7 @@ if (isset($_POST["patient_username"]) && isset($_POST["medication_id"]) && isset
 <!DOCTYPE html>
 <html>
 <head><title>Add Prescription</title>
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
     <h1>Add Reservation</h1>
@@ -85,3 +85,4 @@ if (isset($_POST["patient_username"]) && isset($_POST["medication_id"]) && isset
     <a href="PharmacyServer.php">Back to Home</a>
     </body>
 </html>
+
