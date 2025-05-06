@@ -11,7 +11,6 @@
 ## Installation
 Clone this repository in your local machine:
 * .htaccess
-    * I am not sure if this is necessary. It was in the StarterCode file in GitHub.
 * PharmacyDatabase.php
 * PharmacyServer.php
 * addInventory.php
