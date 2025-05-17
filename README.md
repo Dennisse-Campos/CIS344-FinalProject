@@ -36,7 +36,7 @@ Clone this repository in your local machine:
 ## Running the application
 1.  Open your Web browser
 2.  Navigate to the application's homepage. The URL will typically be:
-    * http://localhost/index.html (if you placed the folder directly in htdocs)
+    * http://localhost/login.php (if you placed the folder directly in htdocs)
     * if placed in a folder type: http://localhost/your-folder-name/login.php
 
       Adjust the URL based on your project's location within the web server's document root.
